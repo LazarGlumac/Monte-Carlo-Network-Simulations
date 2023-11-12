@@ -19,7 +19,7 @@ class Topology():
         self.graph[i][j] = 0
         self.graph[j][i] = 0
 
-    def visualize(self) -> str:
+    def visualize(self):
         G = nx.DiGraph()
         for i in range(len(self.graph)): 
             for j in range(len(self.graph[i])): 
