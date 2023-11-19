@@ -1,7 +1,7 @@
-import random
+import numpy
 
 def MST(G):
-    INF = 99999999
+    INF = numpy.inf
     
     vertices = len(G)
     mst_edges = []
@@ -22,8 +22,12 @@ def MST(G):
                             min = G[i][j]
                             x = i
                             y = j
+        
+        if x == 0 and y == 0:
+            break
+            
         mst_edges.append((x,y))
         selected[y] = True 
         num_edges += 1
-        
+         
     return mst_edges

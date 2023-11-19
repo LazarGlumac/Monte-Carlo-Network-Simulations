@@ -1,2 +1,7 @@
 networkx
 matplotlib
+scipy
+plotly
+kaleido
+ipython
+
