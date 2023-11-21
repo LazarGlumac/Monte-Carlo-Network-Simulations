@@ -1,5 +1,6 @@
 import copy
 from algorithms.mst import MST
+from algorithms.find_disconnected_components import find_num_components
 from topologies.topology import (FullyConnectedTopology, ConstantTopology, ClusteredTopology)
 import random
 from scipy.stats import truncnorm
@@ -24,6 +25,7 @@ class Simulation(ABC):
         self.graph_name = graph_name
         self.link_failure_samples = []
         self.mst_graph_result = []
+        self.disconnected_components_result = []
         
         if randomize_num_nodes:
             self.topology = self.generate_topology()
@@ -58,6 +60,10 @@ class Simulation(ABC):
             self.mst_graph_result.append((len(sampled_mst), len(self.topology.graph)))
         else:
             self.mst_graph_result.append(len(sampled_mst))
+            
+    def simulate_disconnected_components(self):
+        sampled_disc_components = find_num_components(self.topology.graph)
+        self.disconnected_components_result.append(sampled_disc_components)
         
     def simulate_max_flow(self):
         pass
@@ -73,6 +79,7 @@ class Simulation(ABC):
         for i in range(self.num_sims):
             self.sample_link_failure()
             self.simulate_mst()
+            self.simulate_disconnected_components()
             self.simulate_max_flow()
             self.simulate_shortest_path()
             
@@ -94,6 +101,11 @@ class Simulation(ABC):
         
         fig.write_image(os.path.join(RESULTS_DIR, self.graph_name + "_MST.png"))
 
+    def visualize_disconnected_components(self):
+        graph_title = "Number of disconncted components in a " + self.graph_name
+        fig = px.scatter(x=self.link_failure_samples, y=self.disconnected_components_result, title=graph_title)
+        fig.write_image(os.path.join(RESULTS_DIR, self.graph_name + "_MST.png"))
+
     def visualize_max_flow(self):
         pass
     
@@ -102,6 +114,7 @@ class Simulation(ABC):
     
     def visualize_simulation(self):
         self.visualize_mst()
+        self.visualize_disconnected_components()
         self.visualize_max_flow()
         self.visualize_shortest_path()
 
