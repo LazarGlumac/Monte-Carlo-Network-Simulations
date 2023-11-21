@@ -30,6 +30,8 @@ class Simulation(ABC):
         else:
             self.topology = topology
         
+        # keep a list of the original graphs before sampling the link failure in case it is needed for analysis
+        # if randomize_num_nodes is false, this list will only contain one graph
         self.original_graphs = [copy.deepcopy(self.topology.graph)] # use deep copy to avoid copying by reference
 
     @abstractmethod
