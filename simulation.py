@@ -1,5 +1,6 @@
 import copy
 from algorithms.mst import MST
+from algorithms.shortest_path import shortest_path
 from topologies.topology import (FullyConnectedTopology, ConstantTopology, ClusteredTopology)
 import random
 from scipy.stats import truncnorm
@@ -20,6 +21,7 @@ class Simulation():
         self.original_graph = copy.deepcopy(topology.graph) # use deep copy to avoid copying by reference
         self.link_failure_samples = []
         self.mst_graph_result = []
+        self.shortest_path_result = []
 
     def sample_truncated_normal(self, mean, sd, low, upp):
         return truncnorm((low - mean) / sd, (upp - mean) / sd, loc=mean, scale=sd)
@@ -41,14 +43,20 @@ class Simulation():
         
     def simulate_max_flow(self):
         pass
-    
-    def simulate_shortest_path(self):
-        pass
+
+    def simulate_shortest_path(self, source, dest):
+        path = shortest_path(self.topology.graph, source, dest)
+        self.shortest_path_result.append(len(path))
         
     def simulate(self):
         # pick source and sink here?
         source = 0
         sink = 0
+
+        # shortest path source and dest
+        # TODO: should these be random or should we let the user specify?
+        sp_source = random.randint(0, len(self.topology.graph)-1)
+        sp_dest = random.randint(0, len(self.topology.graph)-1)
         
         # initial algorithm output on non-sampled graph
         original_mst = MST(self.original_graph)
@@ -59,7 +67,7 @@ class Simulation():
             self.sample_link_failure()
             self.simulate_mst(original_mst)
             self.simulate_max_flow()
-            self.simulate_shortest_path()
+            self.simulate_shortest_path(sp_source, sp_dest)
             self.topology.graph = copy.deepcopy(self.original_graph) # use deep copy to avoid copying by reference
             
     def visualize_mst(self):
@@ -70,7 +78,13 @@ class Simulation():
         pass
     
     def visualize_shortest_path(self):
-        pass        
+        fig = px.density_heatmap(x=self.link_failure_samples,
+                                 y=self.shortest_path_result, title=self.graph_name + " - Link Failure Rate VS Shortest Path Length",
+                                 labels={
+                                        "x": "Link failure probability",
+                                        "y": "Length of shortest path"
+                                 })
+        fig.write_image(os.path.join(RESULTS_DIR, self.graph_name + "_SP.png") )
     
     def visualize_simulation(self):
         self.visualize_mst()

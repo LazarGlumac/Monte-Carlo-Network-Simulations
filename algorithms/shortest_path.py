@@ -1,8 +1,8 @@
 import heapq
 
-def shortest_paths(G, source, dest=None):
+def shortest_path(G, source, dest):
     explored_nodes = []
-    new_graph = [[0 for _ in range(len(G))] for _ in range(len(G))]
+    selected_edges = []
     distance = MinHeap()
     predecessor = [None] * len(G)
 
@@ -17,8 +17,7 @@ def shortest_paths(G, source, dest=None):
         explored_nodes.append(min_d_node[1])
         
         if min_d_node[1] != source:
-            new_graph[predecessor[min_d_node[1]]][min_d_node[1]] = 1
-            new_graph[min_d_node[1]][predecessor[min_d_node[1]]] = 1
+            selected_edges.append((predecessor[min_d_node[1]], min_d_node[1]))
         
         for node in range(len(G)):
             if node not in explored_nodes and G[min_d_node[1]][node] != 0:
@@ -26,7 +25,16 @@ def shortest_paths(G, source, dest=None):
                     distance.add_node(node, min_d_node[0] + G[min_d_node[1]][node])
                     predecessor[node] = min_d_node[1]
     
-    return new_graph
+    # build path from source to dest
+    path = []
+    curr_node = dest
+    while curr_node != source:
+        path = [curr_node] + path
+        if predecessor[curr_node] == None:
+            return []
+        curr_node = predecessor[curr_node]
+
+    return path
 
 
 class MinHeap():
