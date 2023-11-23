@@ -76,13 +76,20 @@ class Simulation(ABC):
     
     def simulate_shortest_path(self):
         pass
-        
+    
+    def get_random_source_sink(self):
+        s = 0
+        t = s
+        while t == s:
+            t = random.randint(0, len(self.topology.graph)-1)
+        return s, t
+    
     def simulate(self):
+        s, t = self.get_random_source_sink()
+
         for i in range(self.num_sims):
-            s = 0
-            t = s
-            while t == s:
-                t = random.randint(0, len(self.topology.graph)-1)
+            if self.randomize_num_nodes:
+                s, t = self.get_random_source_sink()
             self.sample_link_failure()
             self.simulate_mst()
             self.simulate_disconnected_components()
