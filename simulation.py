@@ -7,6 +7,7 @@ from topologies.topology import (FullyConnectedTopology, ConstantTopology, Clust
 import random
 from scipy.stats import truncnorm
 import plotly.express as px
+import plotly.graph_objects as go
 import os
 from abc import ABC, abstractmethod
 from progress.bar import Bar
@@ -135,8 +136,16 @@ class Simulation(ABC):
         if self.randomize_num_nodes:
             disconnected_components = [result[0] for result in self.disconnected_components_result]
             total_nodes = [result[1] for result in self.disconnected_components_result]
-            fig = px.scatter_3d(x=self.link_failure_samples, y=disconnected_components, z=total_nodes, title=graph_title)
-            fig.write_image(os.path.join(RESULTS_DIR, self.graph_name + "__Disconnected_Components_3D_Scatterplot.png"))
+
+            fig = go.Figure(data=[go.Mesh3d(x=total_nodes,
+                            y=self.link_failure_samples,
+                            z=disconnected_components,
+                            opacity=0.5,
+                            color='rgba(12,51,131,0.6)'
+                            )])            
+                  
+            fig.write_html(os.path.join(RESULTS_DIR, self.graph_name + "__Disconnected_Components_3D_Surfaceplot.html"))
+
         else:
             # Making the scatter plot
             fig = px.scatter(x=self.link_failure_samples, 
@@ -244,20 +253,20 @@ class ClusteredTopologySimulation(Simulation):
         num_nodes = num_clusters * random.randint(MIN_NODES // MIN_CLUSTERS, MAX_NODES // MAX_CLUSTERS)
         return ClusteredTopology(num_nodes, num_clusters)
 
-NUM_SIMS = 1000
-NUM_NODES = 100
+NUM_SIMS = 250
+NUM_NODES = -1
 NUM_CLUSTERS = 25
 NUM_LINKS_PER_NODE = 20
 
-FullyConnectedTopologySimulation = FullyConnectedTopologySimulation(NUM_SIMS, NUM_NODES)
-FullyConnectedTopologySimulation.simulate()
-FullyConnectedTopologySimulation.visualize_simulation()
+# FullyConnectedTopologySimulation = FullyConnectedTopologySimulation(NUM_SIMS, NUM_NODES)
+# FullyConnectedTopologySimulation.simulate()
+# FullyConnectedTopologySimulation.visualize_simulation()
 
 # sometimtes creating constant topology errors, so this is commented out until that gets fixed
 
-ConstantTopologySimulation = ConstantTopologySimulation(NUM_SIMS, NUM_NODES, NUM_LINKS_PER_NODE)
-ConstantTopologySimulation.simulate()
-ConstantTopologySimulation.visualize_simulation()
+# ConstantTopologySimulation = ConstantTopologySimulation(NUM_SIMS, NUM_NODES, NUM_LINKS_PER_NODE)
+# ConstantTopologySimulation.simulate()
+# ConstantTopologySimulation.visualize_simulation()
 
 ClusteredTopologySimulation = ClusteredTopologySimulation(NUM_SIMS, NUM_NODES, NUM_CLUSTERS)
 ClusteredTopologySimulation.simulate()
