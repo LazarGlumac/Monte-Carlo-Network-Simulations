@@ -6,7 +6,6 @@ from topologies.topology import (FullyConnectedTopology, ConstantTopology, Clust
 import random
 from scipy.stats import truncnorm
 import plotly.express as px
-import plotly.graph_objects as go
 import os
 from abc import ABC, abstractmethod
 from progress.bar import Bar
