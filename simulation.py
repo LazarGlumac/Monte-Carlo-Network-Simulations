@@ -67,7 +67,10 @@ class Simulation(ABC):
             
     def simulate_disconnected_components(self):
         sampled_disc_components = find_num_components(self.topology.graph)
-        self.disconnected_components_result.append(sampled_disc_components)
+        if self.randomize_num_nodes:
+            self.disconnected_components_result.append((sampled_disc_components, len(self.topology.graph)))
+        else:
+            self.disconnected_components_result.append(sampled_disc_components)
         
     def simulate_max_flow(self, source, sink):
         sampled_max_flow = max_flow(self.topology.graph, source, sink)
@@ -115,7 +118,6 @@ class Simulation(ABC):
         print("")
             
     def visualize_mst(self):
-        return
         graph_title = "Nodes Reachable In A " + self.graph_name
         
         if self.randomize_num_nodes:
@@ -130,28 +132,34 @@ class Simulation(ABC):
     def visualize_disconnected_components(self):
         graph_title = "Disconnected Components After Sampling Link Failure in a " + self.graph_name
         
-        # Making the scatter plot
-        fig = px.scatter(x=self.link_failure_samples, 
-                         y=self.disconnected_components_result,
-                         labels=dict(x="Link Failure Rate", y="# Disconnected Components"), 
-                         title=graph_title)
+        if self.randomize_num_nodes:
+            disconnected_components = [result[0] for result in self.disconnected_components_result]
+            total_nodes = [result[1] for result in self.disconnected_components_result]
+            fig = px.scatter_3d(x=self.link_failure_samples, y=disconnected_components, z=total_nodes, title=graph_title)
+            fig.write_image(os.path.join(RESULTS_DIR, self.graph_name + "__Disconnected_Components_3D_Scatterplot.png"))
+        else:
+            # Making the scatter plot
+            fig = px.scatter(x=self.link_failure_samples, 
+                            y=self.disconnected_components_result,
+                            labels=dict(x="Link Failure Rate", y="# of Disconnected Components"),
+                            title=graph_title)
+            
+            fig.write_image(os.path.join(RESULTS_DIR, self.graph_name + "_Disconnected_Components_Scatterplot.png"))
+            
+            # Making the heat map
+            grouping_factor = 2
+            num_bins_x = 100 // grouping_factor
+            num_bins_y = max(self.disconnected_components_result) // grouping_factor
+            color_scale = [ 'rgb(225,231,242)', 'rgb(12,51,131)']
+            
+            fig = px.density_heatmap(x=self.link_failure_samples, 
+                                    y=self.disconnected_components_result, 
+                                    nbinsx=num_bins_x, 
+                                    nbinsy=num_bins_y,
+                                    labels=dict(x="Link Failure Rate", y="# of Disconnected Components"),
+                                    title=graph_title)
         
-        fig.write_image(os.path.join(RESULTS_DIR, self.graph_name + "_Disconnected_Components_Scatterplot.png"))
-        
-        # Making the heat map
-        grouping_factor = 2
-        num_bins_x = 100 // grouping_factor
-        num_bins_y = max(self.disconnected_components_result) // grouping_factor
-        color_scale = [ 'rgb(225,231,242)', 'rgb(12,51,131)']
-        
-        fig = px.density_heatmap(x=self.link_failure_samples, 
-                                 y=self.disconnected_components_result, 
-                                 nbinsx=num_bins_x, 
-                                 nbinsy=num_bins_y,
-                                 labels=dict(x="Link Failure Rate", y="# Disconnected Components"),
-                                 title=graph_title)
-    
-        fig.write_image(os.path.join(RESULTS_DIR, self.graph_name + "_Disconnected_Components_Heatmap.png"))
+            fig.write_image(os.path.join(RESULTS_DIR, self.graph_name + "_Disconnected_Components_Heatmap.png"))
 
     def visualize_max_flow(self):
         graph_title = "The maximum flow in a " + self.graph_name
@@ -169,7 +177,7 @@ class Simulation(ABC):
         pass        
     
     def visualize_simulation(self):
-        self.visualize_mst()
+        # self.visualize_mst()
         self.visualize_disconnected_components()
         self.visualize_max_flow()
         self.visualize_shortest_path()
@@ -238,8 +246,8 @@ class ClusteredTopologySimulation(Simulation):
 
 NUM_SIMS = 1000
 NUM_NODES = 100
-NUM_CLUSTERS = 20
-NUM_LINKS_PER_NODE = 15
+NUM_CLUSTERS = 25
+NUM_LINKS_PER_NODE = 20
 
 FullyConnectedTopologySimulation = FullyConnectedTopologySimulation(NUM_SIMS, NUM_NODES)
 FullyConnectedTopologySimulation.simulate()
