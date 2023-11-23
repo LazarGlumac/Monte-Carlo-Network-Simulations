@@ -1,6 +1,7 @@
 import copy
 from algorithms.mst import MST
 from algorithms.find_disconnected_components import find_num_components
+from algorithms.max_flow import max_flow
 from topologies.topology import (FullyConnectedTopology, ConstantTopology, ClusteredTopology)
 import random
 from scipy.stats import truncnorm
@@ -25,6 +26,7 @@ class Simulation(ABC):
         self.graph_name = graph_name
         self.link_failure_samples = []
         self.mst_graph_result = []
+        self.max_flow_result = []
         self.disconnected_components_result = []
         
         if randomize_num_nodes:
@@ -65,22 +67,33 @@ class Simulation(ABC):
         sampled_disc_components = find_num_components(self.topology.graph)
         self.disconnected_components_result.append(sampled_disc_components)
         
-    def simulate_max_flow(self):
-        pass
+    def simulate_max_flow(self, source, sink):
+        sampled_max_flow = max_flow(self.topology.graph, source, sink)
+        if self.randomize_num_nodes:
+            self.max_flow_result.append((sampled_max_flow, len(self.topology.graph)))
+        else:
+            self.max_flow_result.append(sampled_max_flow)
     
     def simulate_shortest_path(self):
         pass
-        
+    
+    def get_random_source_sink(self):
+        s = 0
+        t = s
+        while t == s:
+            t = random.randint(0, len(self.topology.graph)-1)
+        return s, t
+    
     def simulate(self):
-        # pick source and sink here?
-        source = 0
-        sink = 0
-        
+        s, t = self.get_random_source_sink()
+
         for i in range(self.num_sims):
+            if self.randomize_num_nodes:
+                s, t = self.get_random_source_sink()
             self.sample_link_failure()
             self.simulate_mst()
             self.simulate_disconnected_components()
-            self.simulate_max_flow()
+            self.simulate_max_flow(s, t)
             self.simulate_shortest_path()
             
             if self.randomize_num_nodes:
@@ -102,12 +115,21 @@ class Simulation(ABC):
         fig.write_image(os.path.join(RESULTS_DIR, self.graph_name + "_MST.png"))
 
     def visualize_disconnected_components(self):
-        graph_title = "Number of disconncted components in a " + self.graph_name
+        graph_title = "Number of disconnected components in a " + self.graph_name
         fig = px.scatter(x=self.link_failure_samples, y=self.disconnected_components_result, title=graph_title)
         fig.write_image(os.path.join(RESULTS_DIR, self.graph_name + "_MST.png"))
 
     def visualize_max_flow(self):
-        pass
+        graph_title = "The maximum flow in a " + self.graph_name
+
+        if self.randomize_num_nodes:
+            flows = [max_flow_res[0] for max_flow_res in self.max_flow_result]
+            total_nodes = [max_flow_res[1] for max_flow_res in self.max_flow_result]
+            fig = px.scatter_3d(x=self.link_failure_samples, y=flows, z=total_nodes, title=graph_title)
+        else:
+            fig = px.scatter(x=self.link_failure_samples, y=self.max_flow_result, title=graph_title)
+        fig.write_image(os.path.join(RESULTS_DIR, self.graph_name + "_max_flow.png"))
+    
     
     def visualize_shortest_path(self):
         pass        
