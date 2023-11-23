@@ -5,3 +5,4 @@ plotly
 kaleido
 ipython
 progress
+pandas
