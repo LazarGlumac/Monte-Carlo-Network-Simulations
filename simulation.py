@@ -177,9 +177,17 @@ class Simulation(ABC):
             flows = [max_flow_res[0] for max_flow_res in self.max_flow_result]
             total_nodes = [max_flow_res[1] for max_flow_res in self.max_flow_result]
             fig = px.scatter_3d(x=self.link_failure_samples, y=flows, z=total_nodes, title=graph_title)
+
+            fig = go.Figure(data=[go.Mesh3d(x=total_nodes,
+                            y=self.link_failure_samples,
+                            z=flows,
+                            opacity=0.5,
+                            color='rgba(12,51,131,0.6)'
+                            )])
+            fig.write_html(os.path.join(RESULTS_DIR, self.graph_name + "_max_flow.html"))  
         else:
             fig = px.scatter(x=self.link_failure_samples, y=self.max_flow_result, title=graph_title)
-        fig.write_image(os.path.join(RESULTS_DIR, self.graph_name + "_max_flow.png"))
+            fig.write_image(os.path.join(RESULTS_DIR, self.graph_name + "_max_flow.png"))
     
     
     def visualize_shortest_path(self):
@@ -253,14 +261,14 @@ class ClusteredTopologySimulation(Simulation):
         num_nodes = num_clusters * random.randint(MIN_NODES // MIN_CLUSTERS, MAX_NODES // MAX_CLUSTERS)
         return ClusteredTopology(num_nodes, num_clusters)
 
-NUM_SIMS = 250
+NUM_SIMS = 500
 NUM_NODES = -1
 NUM_CLUSTERS = 25
 NUM_LINKS_PER_NODE = 20
 
-# FullyConnectedTopologySimulation = FullyConnectedTopologySimulation(NUM_SIMS, NUM_NODES)
-# FullyConnectedTopologySimulation.simulate()
-# FullyConnectedTopologySimulation.visualize_simulation()
+FullyConnectedTopologySimulation = FullyConnectedTopologySimulation(NUM_SIMS, NUM_NODES)
+FullyConnectedTopologySimulation.simulate()
+FullyConnectedTopologySimulation.visualize_simulation()
 
 # sometimtes creating constant topology errors, so this is commented out until that gets fixed
 
