@@ -300,11 +300,9 @@ FullyConnectedTopologySimulation = FullyConnectedTopologySimulation(NUM_SIMS, NU
 FullyConnectedTopologySimulation.simulate()
 FullyConnectedTopologySimulation.visualize_simulation()
 
-# sometimtes creating constant topology errors, so this is commented out until that gets fixed
-
-# ConstantTopologySimulation = ConstantTopologySimulation(NUM_SIMS, NUM_NODES, NUM_LINKS_PER_NODE)
-# ConstantTopologySimulation.simulate()
-# ConstantTopologySimulation.visualize_simulation()
+ConstantTopologySimulation = ConstantTopologySimulation(NUM_SIMS, NUM_NODES, NUM_LINKS_PER_NODE)
+ConstantTopologySimulation.simulate()
+ConstantTopologySimulation.visualize_simulation()
 
 ClusteredTopologySimulation = ClusteredTopologySimulation(NUM_SIMS, NUM_NODES, NUM_CLUSTERS)
 ClusteredTopologySimulation.simulate()

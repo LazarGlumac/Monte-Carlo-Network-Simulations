@@ -50,8 +50,8 @@ class FullyConnectedTopology(Topology):
 # TODO fix this class
 class ConstantTopology(Topology):
     """
-    A class to represent a topology of a network where each node has a constant
-    number of links. 
+    A class to represent a topology of a network where each node has a 
+    maximum constant number of links. 
     """
     def __init__(self, n, links_per_node) -> None:
         if links_per_node > n-1:
@@ -72,7 +72,7 @@ class ConstantTopology(Topology):
             available.remove(i)
 
             push_back = [] # Store the nodes that were popped from the heap but not used
-            while num_links < links_per_node:
+            while num_links < links_per_node and link_heap:
                 candidate = heapq.heappop(link_heap) # Pop the node with the fewest links
                 if candidate[1] not in available:
                     continue
