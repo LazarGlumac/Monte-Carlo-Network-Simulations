@@ -139,7 +139,7 @@ class Simulation(ABC):
         else:
             fig = px.scatter(x=self.link_failure_samples, y=self.mst_graph_result, title=graph_title)
         
-        fig.write_image(os.path.join(RESULTS_DIR["mst"], self.graph_name + "_MST.png"))
+        fig.write_html(os.path.join(RESULTS_DIR["mst"], self.graph_name + "_MST.html"))
 
     def visualize_disconnected_components(self):
         graph_title = "Disconnected Components After Sampling Link Failure in a " + self.graph_name
@@ -164,7 +164,7 @@ class Simulation(ABC):
                             labels=dict(x="Link Failure Rate", y="# of Disconnected Components"),
                             title=graph_title)
             
-            fig.write_image(os.path.join(RESULTS_DIR["disconnected_components"], self.graph_name + "_Disconnected_Components_Scatterplot.png"))
+            fig.write_html(os.path.join(RESULTS_DIR["disconnected_components"], self.graph_name + "_Disconnected_Components_Scatterplot.html"))
             
             # Making the heat map
             grouping_factor = 2
@@ -179,7 +179,7 @@ class Simulation(ABC):
                                     labels=dict(x="Link Failure Rate", y="# of Disconnected Components"),
                                     title=graph_title)
         
-            fig.write_image(os.path.join(RESULTS_DIR["disconnected_components"], self.graph_name + "_Disconnected_Components_Heatmap.png"))
+            fig.write_html(os.path.join(RESULTS_DIR["disconnected_components"], self.graph_name + "_Disconnected_Components_Heatmap.html"))
 
     def visualize_max_flow(self):
         graph_title = "The maximum flow in a " + self.graph_name
@@ -197,7 +197,7 @@ class Simulation(ABC):
             fig.write_html(os.path.join(RESULTS_DIR["max_flow"], self.graph_name + "_max_flow.html"))  
         else:
             fig = px.scatter(x=self.link_failure_samples, y=self.max_flow_result, title=graph_title)
-            fig.write_image(os.path.join(RESULTS_DIR["max_flow"], self.graph_name + "_max_flow.png"))
+            fig.write_html(os.path.join(RESULTS_DIR["max_flow"], self.graph_name + "_max_flow.html"))
     
     
     def visualize_shortest_path(self):
