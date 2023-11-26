@@ -84,7 +84,10 @@ class Simulation(ABC):
     
     def simulate_shortest_path(self, source, dest):
         path = shortest_path(self.topology.graph, source, dest)
-        self.shortest_path_result.append(len(path))
+        if (self.randomize_num_nodes):
+            self.shortest_path_result.append((len(path), len(self.topology.graph)))
+        else:
+            self.shortest_path_result.append(len(path))
     
     def get_random_source_sink(self):
         s = 0
@@ -179,7 +182,6 @@ class Simulation(ABC):
         if self.randomize_num_nodes:
             flows = [max_flow_res[0] for max_flow_res in self.max_flow_result]
             total_nodes = [max_flow_res[1] for max_flow_res in self.max_flow_result]
-            fig = px.scatter_3d(x=self.link_failure_samples, y=flows, z=total_nodes, title=graph_title)
 
             fig = go.Figure(data=[go.Mesh3d(x=total_nodes,
                             y=self.link_failure_samples,
@@ -194,13 +196,27 @@ class Simulation(ABC):
     
     
     def visualize_shortest_path(self):
-        fig = px.density_heatmap(x=self.link_failure_samples,
-                                 y=self.shortest_path_result, title=self.graph_name + " - Link Failure Rate VS Shortest Path Length",
-                                 labels={
-                                        "x": "Link failure probability",
-                                        "y": "Length of shortest path"
-                                 })
-        fig.write_image(os.path.join(RESULTS_DIR, self.graph_name + "_SP.png") )
+        if self.randomize_num_nodes:
+            sp_lengths = [sp_result[0] for sp_result in self.shortest_path_result]
+            num_nodes = [sp_result [1] for sp_result in self.shortest_path_result]
+
+            fig = go.Figure(data=[go.Mesh3d(x=num_nodes, 
+                            y=self.link_failure_samples, 
+                            z=sp_lengths, 
+                            opacity=0.5)])
+            fig.update_layout(scene = dict(
+                              xaxis_title='Number of Nodes',
+                              yaxis_title='Link Failure Rate',
+                              zaxis_title='Length of Shortest Path'))
+            fig.write_html(os.path.join(RESULTS_DIR, self.graph_name + "_SP_3D_Surfaceplot.html"))
+        else:
+            fig = px.density_heatmap(x=self.link_failure_samples,
+                                     y=self.shortest_path_result, title=self.graph_name + " - Link Failure Rate VS Shortest Path Length",
+                                     labels={
+                                         "x": "Link Failure Rate",
+                                         "y": "Length of Shortest path"
+                                     })
+            fig.write_html(os.path.join(RESULTS_DIR, self.graph_name + "_SP.html") )
     
     def visualize_simulation(self):
         # self.visualize_mst()
