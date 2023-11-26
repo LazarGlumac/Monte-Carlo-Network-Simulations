@@ -1,13 +1,17 @@
 import copy
+import time
 from algorithms.mst import MST
 from algorithms.shortest_path import shortest_path
 from algorithms.find_disconnected_components import find_num_components
+from algorithms.max_flow import max_flow
 from topologies.topology import (FullyConnectedTopology, ConstantTopology, ClusteredTopology)
 import random
 from scipy.stats import truncnorm
 import plotly.express as px
+import plotly.graph_objects as go
 import os
 from abc import ABC, abstractmethod
+from progress.bar import Bar
 
 RESULTS_DIR = "results"
 MIN_NODES = 25
@@ -27,6 +31,7 @@ class Simulation(ABC):
         self.link_failure_samples = []
         self.mst_graph_result = []
         self.shortest_path_result = []
+        self.max_flow_result = []
         self.disconnected_components_result = []
         
         if randomize_num_nodes:
@@ -47,7 +52,7 @@ class Simulation(ABC):
 
     def sample_link_failure(self):
         x = self.sample_truncated_normal(0.5, 0.5, 0, 1)
-        link_failure = x.rvs()
+        link_failure = round(x.rvs(), 2)
         self.link_failure_samples.append(link_failure)
         
         for i in range(len(self.topology.graph)):
@@ -65,37 +70,56 @@ class Simulation(ABC):
             
     def simulate_disconnected_components(self):
         sampled_disc_components = find_num_components(self.topology.graph)
-        self.disconnected_components_result.append(sampled_disc_components)
+        if self.randomize_num_nodes:
+            self.disconnected_components_result.append((sampled_disc_components, len(self.topology.graph)))
+        else:
+            self.disconnected_components_result.append(sampled_disc_components)
         
-    def simulate_max_flow(self):
-        pass
-
+    def simulate_max_flow(self, source, sink):
+        sampled_max_flow = max_flow(self.topology.graph, source, sink)
+        if self.randomize_num_nodes:
+            self.max_flow_result.append((sampled_max_flow, len(self.topology.graph)))
+        else:
+            self.max_flow_result.append(sampled_max_flow)
+    
     def simulate_shortest_path(self, source, dest):
         path = shortest_path(self.topology.graph, source, dest)
         self.shortest_path_result.append(len(path))
-        
+    
+    def get_random_source_sink(self):
+        s = 0
+        t = s
+        while t == s:
+            t = random.randint(0, len(self.topology.graph)-1)
+        return s, t
+    
     def simulate(self):
-        # pick source and sink here?
-        source = 0
-        sink = 0
-
-        # shortest path source and dest
-        # TODO: should these be random or should we let the user specify?
-        sp_source = random.randint(0, len(self.topology.graph)-1)
-        sp_dest = random.randint(0, len(self.topology.graph)-1)
+        start_time = time.time()
         
-        for i in range(self.num_sims):
-            self.sample_link_failure()
-            self.simulate_mst()
-            self.simulate_disconnected_components()
-            self.simulate_max_flow()
-            self.simulate_shortest_path(sp_source, sp_dest)
+        # pick source and sink here
+        s, t = self.get_random_source_sink()
+        
+        with Bar("Running " + str(self.num_sims) + " simulations on a " + self.graph_name, max=self.num_sims) as bar:
+            for i in range(self.num_sims):
+                if self.randomize_num_nodes:
+                    s, t = self.get_random_source_sink()
+
+                self.sample_link_failure()
+                self.simulate_mst()
+                self.simulate_disconnected_components()
+                self.simulate_max_flow(s, t)
+                self.simulate_shortest_path(s, t)
+                
+                if self.randomize_num_nodes:
+                    self.topology = self.generate_topology()
+                    self.original_graphs.append(copy.deepcopy(self.topology.graph))
+                else:
+                    self.topology.graph = copy.deepcopy(self.original_graphs[0]) # use deep copy to avoid copying by reference
             
-            if self.randomize_num_nodes:
-                self.topology = self.generate_topology()
-                self.original_graphs.append(copy.deepcopy(self.topology.graph))
-            else:
-                self.topology.graph = copy.deepcopy(self.original_graphs[0]) # use deep copy to avoid copying by reference
+                bar.next()
+                  
+        print("*** Total Runtime: " + str(round(time.time()-start_time, 2)) + "s")
+        print("")
             
     def visualize_mst(self):
         graph_title = "Nodes Reachable In A " + self.graph_name
@@ -110,12 +134,64 @@ class Simulation(ABC):
         fig.write_image(os.path.join(RESULTS_DIR, self.graph_name + "_MST.png"))
 
     def visualize_disconnected_components(self):
-        graph_title = "Number of disconncted components in a " + self.graph_name
-        fig = px.scatter(x=self.link_failure_samples, y=self.disconnected_components_result, title=graph_title)
-        fig.write_image(os.path.join(RESULTS_DIR, self.graph_name + "_MST.png"))
+        graph_title = "Disconnected Components After Sampling Link Failure in a " + self.graph_name
+        
+        if self.randomize_num_nodes:
+            disconnected_components = [result[0] for result in self.disconnected_components_result]
+            total_nodes = [result[1] for result in self.disconnected_components_result]
+
+            fig = go.Figure(data=[go.Mesh3d(x=total_nodes,
+                            y=self.link_failure_samples,
+                            z=disconnected_components,
+                            opacity=0.5,
+                            color='rgba(12,51,131,0.6)'
+                            )])            
+                  
+            fig.write_html(os.path.join(RESULTS_DIR, self.graph_name + "__Disconnected_Components_3D_Surfaceplot.html"))
+
+        else:
+            # Making the scatter plot
+            fig = px.scatter(x=self.link_failure_samples, 
+                            y=self.disconnected_components_result,
+                            labels=dict(x="Link Failure Rate", y="# of Disconnected Components"),
+                            title=graph_title)
+            
+            fig.write_image(os.path.join(RESULTS_DIR, self.graph_name + "_Disconnected_Components_Scatterplot.png"))
+            
+            # Making the heat map
+            grouping_factor = 2
+            num_bins_x = 100 // grouping_factor
+            num_bins_y = max(self.disconnected_components_result) // grouping_factor
+            color_scale = [ 'rgb(225,231,242)', 'rgb(12,51,131)']
+            
+            fig = px.density_heatmap(x=self.link_failure_samples, 
+                                    y=self.disconnected_components_result, 
+                                    nbinsx=num_bins_x, 
+                                    nbinsy=num_bins_y,
+                                    labels=dict(x="Link Failure Rate", y="# of Disconnected Components"),
+                                    title=graph_title)
+        
+            fig.write_image(os.path.join(RESULTS_DIR, self.graph_name + "_Disconnected_Components_Heatmap.png"))
 
     def visualize_max_flow(self):
-        pass
+        graph_title = "The maximum flow in a " + self.graph_name
+
+        if self.randomize_num_nodes:
+            flows = [max_flow_res[0] for max_flow_res in self.max_flow_result]
+            total_nodes = [max_flow_res[1] for max_flow_res in self.max_flow_result]
+            fig = px.scatter_3d(x=self.link_failure_samples, y=flows, z=total_nodes, title=graph_title)
+
+            fig = go.Figure(data=[go.Mesh3d(x=total_nodes,
+                            y=self.link_failure_samples,
+                            z=flows,
+                            opacity=0.5,
+                            color='rgba(12,51,131,0.6)'
+                            )])
+            fig.write_html(os.path.join(RESULTS_DIR, self.graph_name + "_max_flow.html"))  
+        else:
+            fig = px.scatter(x=self.link_failure_samples, y=self.max_flow_result, title=graph_title)
+            fig.write_image(os.path.join(RESULTS_DIR, self.graph_name + "_max_flow.png"))
+    
     
     def visualize_shortest_path(self):
         fig = px.density_heatmap(x=self.link_failure_samples,
@@ -127,7 +203,7 @@ class Simulation(ABC):
         fig.write_image(os.path.join(RESULTS_DIR, self.graph_name + "_SP.png") )
     
     def visualize_simulation(self):
-        self.visualize_mst()
+        # self.visualize_mst()
         self.visualize_disconnected_components()
         self.visualize_max_flow()
         self.visualize_shortest_path()
@@ -137,7 +213,7 @@ class FullyConnectedTopologySimulation(Simulation):
     A child class of Simulation to simulate Fully Connected Topologies
     
     If num_nodes equals -1, it will randomize the topology in each individual simulation.
-    Otherwise, it creates a topology from the given num_nodes and use that for every simulation.
+    Otherwise, it creates a topology from the given num_nodes and uses that for every simulation.
     """
     
     def __init__(self, num_sims, num_nodes) -> None:
@@ -157,7 +233,7 @@ class ConstantTopologySimulation(Simulation):
     A child class of Simulation to simulate Constant Topologies
     
     If num_nodes or links_per_node  equals -1, it will randomize the topology in each individual simulation.
-    Otherwise, it creates a topology from the given num_nodes and links_per_node and use that for every simulation.
+    Otherwise, it creates a topology from the given num_nodes and links_per_node and uses that for every simulation.
     """
     
     def __init__(self, num_sims, num_nodes, links_per_node) -> None:
@@ -178,7 +254,7 @@ class ClusteredTopologySimulation(Simulation):
     A child class of Simulation to simulate Clustered Topologies.
     
     If num_nodes or num_clusters equals -1, it will randomize the topology in each individual simulation.
-    Otherwise, it creates a topology from the given num_nodes and num_clusters and use that for every simulation.
+    Otherwise, it creates a topology from the given num_nodes and num_clusters and uses that for every simulation.
     """
     
     def __init__(self, num_sims, num_nodes, num_clusters) -> None:
@@ -194,10 +270,10 @@ class ClusteredTopologySimulation(Simulation):
         num_nodes = num_clusters * random.randint(MIN_NODES // MIN_CLUSTERS, MAX_NODES // MAX_CLUSTERS)
         return ClusteredTopology(num_nodes, num_clusters)
 
-NUM_SIMS = 100
-NUM_NODES = 50
-NUM_CLUSTERS = 10
-NUM_LINKS_PER_NODE = -1
+NUM_SIMS = 500
+NUM_NODES = -1
+NUM_CLUSTERS = 25
+NUM_LINKS_PER_NODE = 20
 
 FullyConnectedTopologySimulation = FullyConnectedTopologySimulation(NUM_SIMS, NUM_NODES)
 FullyConnectedTopologySimulation.simulate()
