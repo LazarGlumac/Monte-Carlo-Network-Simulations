@@ -13,7 +13,12 @@ import os
 from abc import ABC, abstractmethod
 from progress.bar import Bar
 
-RESULTS_DIR = "results"
+RESULTS_DIR = {
+    "mst": "results/mst",
+    "max_flow": "results/max_flow",
+    "disconnected_components": "results/disconnected_components",
+    "shortest_path": "results/shortest_path"
+}
 MIN_NODES = 25
 MAX_NODES = 150
 MIN_CLUSTERS = 5
@@ -134,7 +139,7 @@ class Simulation(ABC):
         else:
             fig = px.scatter(x=self.link_failure_samples, y=self.mst_graph_result, title=graph_title)
         
-        fig.write_image(os.path.join(RESULTS_DIR, self.graph_name + "_MST.png"))
+        fig.write_image(os.path.join(RESULTS_DIR["mst"], self.graph_name + "_MST.png"))
 
     def visualize_disconnected_components(self):
         graph_title = "Disconnected Components After Sampling Link Failure in a " + self.graph_name
@@ -150,7 +155,7 @@ class Simulation(ABC):
                             color='rgba(12,51,131,0.6)'
                             )])            
                   
-            fig.write_html(os.path.join(RESULTS_DIR, self.graph_name + "__Disconnected_Components_3D_Surfaceplot.html"))
+            fig.write_html(os.path.join(RESULTS_DIR["disconnected_components"], self.graph_name + "__Disconnected_Components_3D_Surfaceplot.html"))
 
         else:
             # Making the scatter plot
@@ -159,7 +164,7 @@ class Simulation(ABC):
                             labels=dict(x="Link Failure Rate", y="# of Disconnected Components"),
                             title=graph_title)
             
-            fig.write_image(os.path.join(RESULTS_DIR, self.graph_name + "_Disconnected_Components_Scatterplot.png"))
+            fig.write_image(os.path.join(RESULTS_DIR["disconnected_components"], self.graph_name + "_Disconnected_Components_Scatterplot.png"))
             
             # Making the heat map
             grouping_factor = 2
@@ -174,7 +179,7 @@ class Simulation(ABC):
                                     labels=dict(x="Link Failure Rate", y="# of Disconnected Components"),
                                     title=graph_title)
         
-            fig.write_image(os.path.join(RESULTS_DIR, self.graph_name + "_Disconnected_Components_Heatmap.png"))
+            fig.write_image(os.path.join(RESULTS_DIR["disconnected_components"], self.graph_name + "_Disconnected_Components_Heatmap.png"))
 
     def visualize_max_flow(self):
         graph_title = "The maximum flow in a " + self.graph_name
@@ -189,10 +194,10 @@ class Simulation(ABC):
                             opacity=0.5,
                             color='rgba(12,51,131,0.6)'
                             )])
-            fig.write_html(os.path.join(RESULTS_DIR, self.graph_name + "_max_flow.html"))  
+            fig.write_html(os.path.join(RESULTS_DIR["max_flow"], self.graph_name + "_max_flow.html"))  
         else:
             fig = px.scatter(x=self.link_failure_samples, y=self.max_flow_result, title=graph_title)
-            fig.write_image(os.path.join(RESULTS_DIR, self.graph_name + "_max_flow.png"))
+            fig.write_image(os.path.join(RESULTS_DIR["max_flow"], self.graph_name + "_max_flow.png"))
     
     
     def visualize_shortest_path(self):
@@ -208,7 +213,7 @@ class Simulation(ABC):
                               xaxis_title='Number of Nodes',
                               yaxis_title='Link Failure Rate',
                               zaxis_title='Length of Shortest Path'))
-            fig.write_html(os.path.join(RESULTS_DIR, self.graph_name + "_SP_3D_Surfaceplot.html"))
+            fig.write_html(os.path.join(RESULTS_DIR["shortest_path"], self.graph_name + "_SP_3D_Surfaceplot.html"))
         else:
             fig = px.density_heatmap(x=self.link_failure_samples,
                                      y=self.shortest_path_result, title=self.graph_name + " - Link Failure Rate VS Shortest Path Length",
@@ -216,7 +221,7 @@ class Simulation(ABC):
                                          "x": "Link Failure Rate",
                                          "y": "Length of Shortest path"
                                      })
-            fig.write_html(os.path.join(RESULTS_DIR, self.graph_name + "_SP.html") )
+            fig.write_html(os.path.join(RESULTS_DIR["shortest_path"], self.graph_name + "_SP.html") )
     
     def visualize_simulation(self):
         # self.visualize_mst()
