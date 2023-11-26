@@ -1,6 +1,7 @@
 import copy
 import time
 from algorithms.mst import MST
+from algorithms.shortest_path import shortest_path
 from algorithms.find_disconnected_components import find_num_components
 from algorithms.max_flow import max_flow
 from topologies.topology import (FullyConnectedTopology, ConstantTopology, ClusteredTopology)
@@ -29,6 +30,7 @@ class Simulation(ABC):
         self.graph_name = graph_name
         self.link_failure_samples = []
         self.mst_graph_result = []
+        self.shortest_path_result = []
         self.max_flow_result = []
         self.disconnected_components_result = []
         
@@ -80,8 +82,12 @@ class Simulation(ABC):
         else:
             self.max_flow_result.append(sampled_max_flow)
     
-    def simulate_shortest_path(self):
-        pass
+    def simulate_shortest_path(self, source, dest):
+        path = shortest_path(self.topology.graph, source, dest)
+        if (self.randomize_num_nodes):
+            self.shortest_path_result.append((len(path), len(self.topology.graph)))
+        else:
+            self.shortest_path_result.append(len(path))
     
     def get_random_source_sink(self):
         s = 0
@@ -105,7 +111,7 @@ class Simulation(ABC):
                 self.simulate_mst()
                 self.simulate_disconnected_components()
                 self.simulate_max_flow(s, t)
-                self.simulate_shortest_path()
+                self.simulate_shortest_path(s, t)
                 
                 if self.randomize_num_nodes:
                     self.topology = self.generate_topology()
@@ -176,7 +182,6 @@ class Simulation(ABC):
         if self.randomize_num_nodes:
             flows = [max_flow_res[0] for max_flow_res in self.max_flow_result]
             total_nodes = [max_flow_res[1] for max_flow_res in self.max_flow_result]
-            fig = px.scatter_3d(x=self.link_failure_samples, y=flows, z=total_nodes, title=graph_title)
 
             fig = go.Figure(data=[go.Mesh3d(x=total_nodes,
                             y=self.link_failure_samples,
@@ -191,7 +196,27 @@ class Simulation(ABC):
     
     
     def visualize_shortest_path(self):
-        pass        
+        if self.randomize_num_nodes:
+            sp_lengths = [sp_result[0] for sp_result in self.shortest_path_result]
+            num_nodes = [sp_result [1] for sp_result in self.shortest_path_result]
+
+            fig = go.Figure(data=[go.Mesh3d(x=num_nodes, 
+                            y=self.link_failure_samples, 
+                            z=sp_lengths, 
+                            opacity=0.5)])
+            fig.update_layout(scene = dict(
+                              xaxis_title='Number of Nodes',
+                              yaxis_title='Link Failure Rate',
+                              zaxis_title='Length of Shortest Path'))
+            fig.write_html(os.path.join(RESULTS_DIR, self.graph_name + "_SP_3D_Surfaceplot.html"))
+        else:
+            fig = px.density_heatmap(x=self.link_failure_samples,
+                                     y=self.shortest_path_result, title=self.graph_name + " - Link Failure Rate VS Shortest Path Length",
+                                     labels={
+                                         "x": "Link Failure Rate",
+                                         "y": "Length of Shortest path"
+                                     })
+            fig.write_html(os.path.join(RESULTS_DIR, self.graph_name + "_SP.html") )
     
     def visualize_simulation(self):
         # self.visualize_mst()
