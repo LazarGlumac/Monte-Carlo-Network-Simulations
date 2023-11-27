@@ -1,6 +1,5 @@
 import copy
 import time
-from algorithms.mst import MST
 from algorithms.shortest_path import shortest_path
 from algorithms.find_disconnected_components import find_num_components
 from algorithms.max_flow import max_flow
@@ -14,7 +13,6 @@ from abc import ABC, abstractmethod
 from progress.bar import Bar
 
 RESULTS_DIR = {
-    "mst": "results/mst",
     "max_flow": "results/max_flow",
     "disconnected_components": "results/disconnected_components",
     "shortest_path": "results/shortest_path"
@@ -34,7 +32,6 @@ class Simulation(ABC):
         self.randomize_num_nodes = randomize_num_nodes
         self.graph_name = graph_name
         self.link_failure_samples = []
-        self.mst_graph_result = []
         self.shortest_path_result = []
         self.max_flow_result = []
         self.disconnected_components_result = []
@@ -65,13 +62,6 @@ class Simulation(ABC):
                 if (self.topology.graph[i][j] > 0):
                     if random.random() <= link_failure:
                         self.topology.destroy_link(i, j)
-            
-    def simulate_mst(self):
-        sampled_mst = MST(self.topology.graph)
-        if self.randomize_num_nodes:
-            self.mst_graph_result.append((len(sampled_mst), len(self.topology.graph)))
-        else:
-            self.mst_graph_result.append(len(sampled_mst))
             
     def simulate_disconnected_components(self):
         sampled_disc_components = find_num_components(self.topology.graph)
@@ -113,7 +103,6 @@ class Simulation(ABC):
                     s, t = self.get_random_source_sink()
 
                 self.sample_link_failure()
-                self.simulate_mst()
                 self.simulate_disconnected_components()
                 self.simulate_max_flow(s, t)
                 self.simulate_shortest_path(s, t)
@@ -128,18 +117,6 @@ class Simulation(ABC):
                   
         print("*** Total Runtime: " + str(round(time.time()-start_time, 2)) + "s")
         print("")
-            
-    def visualize_mst(self):
-        graph_title = "Nodes Reachable In A " + self.graph_name
-        
-        if self.randomize_num_nodes:
-            reachable_nodes = [mst_result[0] for mst_result in self.mst_graph_result]
-            total_nodes = [mst_result[1] for mst_result in self.mst_graph_result]
-            fig = px.scatter_3d(x=self.link_failure_samples, y=reachable_nodes, z=total_nodes, title=graph_title)
-        else:
-            fig = px.scatter(x=self.link_failure_samples, y=self.mst_graph_result, title=graph_title)
-        
-        fig.write_html(os.path.join(RESULTS_DIR["mst"], self.graph_name + "_MST.html"))
 
     def visualize_disconnected_components(self):
         graph_title = "Disconnected Components After Sampling Link Failure in a " + self.graph_name
@@ -224,7 +201,6 @@ class Simulation(ABC):
             fig.write_html(os.path.join(RESULTS_DIR["shortest_path"], self.graph_name + "_SP.html") )
     
     def visualize_simulation(self):
-        # self.visualize_mst()
         self.visualize_disconnected_components()
         self.visualize_max_flow()
         self.visualize_shortest_path()
@@ -291,9 +267,9 @@ class ClusteredTopologySimulation(Simulation):
         num_nodes = num_clusters * random.randint(MIN_NODES // MIN_CLUSTERS, MAX_NODES // MAX_CLUSTERS)
         return ClusteredTopology(num_nodes, num_clusters)
 
-NUM_SIMS = 500
-NUM_NODES = -1
-NUM_CLUSTERS = 25
+NUM_SIMS = 50
+NUM_NODES = 100
+NUM_CLUSTERS = 10
 NUM_LINKS_PER_NODE = 20
 
 FullyConnectedTopologySimulation = FullyConnectedTopologySimulation(NUM_SIMS, NUM_NODES)
