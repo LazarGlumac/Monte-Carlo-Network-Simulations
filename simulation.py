@@ -174,9 +174,19 @@ class Simulation(ABC):
                             opacity=0.5,
                             color='rgba(12,51,131,0.6)'
                             )])
-            fig.write_html(os.path.join(RESULTS_DIR["max_flow"], self.graph_name + "_max_flow.html"))  
+            fig.update_layout(scene = dict(
+                              xaxis_title='Number of Nodes',
+                              yaxis_title='Link Failure Rate',
+                              zaxis_title='Maximum Flow'))
+            fig.write_html(os.path.join(RESULTS_DIR["max_flow"], self.graph_name + "_rand_nodes_max_flow.html"))  
         else:
-            fig = px.scatter(x=self.link_failure_samples, y=self.max_flow_result, title=graph_title)
+            fig = px.scatter(x=self.link_failure_samples, 
+                             y=self.max_flow_result, 
+                             title=graph_title, 
+                             labels={
+                                  "x": "Link Failure Rate",
+                                  "y": "Maximum Flow"
+                            })
             fig.write_html(os.path.join(RESULTS_DIR["max_flow"], self.graph_name + "_max_flow.html"))
     
     
@@ -272,10 +282,10 @@ class ClusteredTopologySimulation(Simulation):
         num_nodes = num_clusters * random.randint(MIN_NODES // MIN_CLUSTERS, MAX_NODES // MAX_CLUSTERS)
         return ClusteredTopology(num_nodes, num_clusters)
 
-NUM_SIMS = 100
+NUM_SIMS = 500
 NUM_NODES = -1
 NUM_CLUSTERS = 10
-NUM_LINKS_PER_NODE = 20
+NUM_LINKS_PER_NODE = 10
 
 FullyConnectedTopologySimulation = FullyConnectedTopologySimulation(NUM_SIMS, NUM_NODES)
 FullyConnectedTopologySimulation.simulate()
