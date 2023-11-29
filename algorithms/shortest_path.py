@@ -1,6 +1,10 @@
 import heapq
 
 def shortest_path(G, source, dest):
+    """
+    Returns the number of shortest between between a source and sink in a graph.
+    G is the graph in an adjacenecy matrix.
+    """
     explored_nodes = []
     distance = MinHeap()
     predecessor = [None] * len(G)
@@ -41,11 +45,17 @@ def shortest_path(G, source, dest):
 
 
 class MinHeap():
+    """
+    Represents a minimum heap.
+    """
     heap = []
     entry_finder = {}
     REMOVED = -1
 
     def add_node(self, node, priority=0):
+        """
+        Adds a node to the heap.
+        """
         if node in self.entry_finder:
             self.remove_node(node)
         entry = [priority, node]
@@ -53,10 +63,16 @@ class MinHeap():
         heapq.heappush(self.heap, entry)
 
     def remove_node(self, node):
+        """
+        Removes a node from the heap.
+        """
         entry = self.entry_finder.pop(node)
         entry[-1] = self.REMOVED
 
     def pop_node(self):
+        """
+        Pops a node from the heap.
+        """
         while self.heap:
             priority, node = heapq.heappop(self.heap)
             if node is not self.REMOVED:
