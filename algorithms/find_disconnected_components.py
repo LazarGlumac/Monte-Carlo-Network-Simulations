@@ -1,4 +1,8 @@
 def find_num_components(G):
+    """
+    Returns the number of disconnected components in a graph.
+    G is the graph in an adjacenecy matrix.
+    """
     visited = [False for i in range(len(G))]
     num_components = 0
     
