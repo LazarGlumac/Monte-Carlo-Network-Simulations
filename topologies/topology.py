@@ -47,7 +47,6 @@ class FullyConnectedTopology(Topology):
                 self.graph[j][i] = self.graph[i][j]
 
 
-# TODO fix this class
 class ConstantTopology(Topology):
     """
     A class to represent a topology of a network where each node has a 
@@ -68,7 +67,7 @@ class ConstantTopology(Topology):
         for i in range(n):
             if i not in available:
                 continue
-            num_links = sum(self.graph[i]) - 1
+            num_links = sum([1 for edge_weight in self.graph[i] if edge_weight > 0]) - 1
             available.remove(i)
 
             push_back = [] # Store the nodes that were popped from the heap but not used
@@ -111,13 +110,11 @@ class ClusteredTopology(Topology):
             edge_weight = self.get_random_edge_weight()
             self.graph[centroid][(centroid + cluster_size) % n] = edge_weight
             self.graph[(centroid + cluster_size) % n][centroid] = edge_weight
-            # TODO should there be random cross links between the centroid ring?
             for child in range(cluster_size): # Make an edge between the centroid and each child
                 edge_weight = self.get_random_edge_weight()
                 self.graph[centroid][centroid + child] = edge_weight
                 self.graph[centroid + child][centroid] = edge_weight
             links_in_cluster = random.randint(0, cluster_size*(cluster_size-1)//2) # Randomly interconnect nodes in cluster
-            # TODO should this be a random number of links or a constant number of links?
             while links_in_cluster > 0:
                 linked_nodes = random.sample(range(cluster_size), 2)
                 if linked_nodes[0] != centroid and linked_nodes[1] != centroid:
